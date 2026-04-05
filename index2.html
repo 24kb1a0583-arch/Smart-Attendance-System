@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Smart Attendance System</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  background: linear-gradient(135deg, #020617, #0f172a);
+  color: white;
+}
+
+.container { display: flex; }
+
+/* Sidebar */
+.sidebar {
+  width: 240px;
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(12px);
+  height: 100vh;
+  padding: 20px;
+}
+
+.sidebar h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #22c55e;
+}
+
+.sidebar li {
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.sidebar li:hover {
+  background: rgba(34,197,94,0.2);
+  color: #22c55e;
+}
+
+/* Main */
+.main { flex: 1; padding: 30px; }
+
+/* Sections */
+.section { display: none; }
+.section.active { display: block; }
+
+/* Cards */
+.cards {
+  display: flex;
+  gap: 20px;
+}
+
+.card {
+  background: rgba(30,41,59,0.6);
+  padding: 25px;
+  border-radius: 15px;
+  width: 180px;
+  text-align: center;
+}
+
+/* Inputs */
+input {
+  padding: 10px;
+  margin: 10px;
+  width: 250px;
+  border-radius: 8px;
+  border: none;
+}
+
+/* Buttons */
+button {
+  padding: 10px 15px;
+  background: #22c55e;
+  border: none;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <h2>Smart Attendance</h2>
+  <ul>
+    <li onclick="showSection('login')">Login</li>
+    <li onclick="showSection('dashboard')">Dashboard</li>
+    <li onclick="showSection('admin')">Admin</li>
+    <li onclick="showSection('mark')">Mark Attendance</li>
+  </ul>
+</div>
+
+<!-- Main -->
+<div class="main">
+
+<!-- LOGIN -->
+<div id="login" class="section active">
+  <h1>Login Panel</h1>
+
+  <h3>Head Master Login</h3>
+  <input type="text" id="hmUser" placeholder="Username">
+  <input type="password" id="hmPass" placeholder="Password">
+  <button onclick="login('hm')">Login</button>
+
+  <h3>Teacher Login</h3>
+  <input type="text" id="tUser" placeholder="Username">
+  <input type="password" id="tPass" placeholder="Password">
+  <button onclick="login('teacher')">Login</button>
+
+  <p id="loginStatus"></p>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="section">
+  <h1>Dashboard</h1>
+  <div class="cards">
+    <div class="card">Total Students<br><b id="total">120</b></div>
+    <div class="card">Present<br><b id="present">0</b></div>
+    <div class="card">Absent<br><b id="absent">120</b></div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="admin" class="section">
+  <h1>Admin Panel</h1>
+  <input type="text" id="studentName" placeholder="Student Name">
+  <button onclick="addStudent()">Add Student</button>
+  <ul id="studentList"></ul>
+</div>
+
+<!-- ATTENDANCE -->
+<div id="mark" class="section">
+  <h1>Mark Attendance</h1>
+  <input type="text" id="userId" placeholder="Enter Student Name">
+  <button onclick="markAttendance()">Mark</button>
+  <p id="status"></p>
+</div>
+
+</div>
+</div>
+
+<script>
+let students = [];
+let presentCount = 0;
+let totalStudents = 120;
+
+// Navigation
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// LOGIN SYSTEM
+function login(type) {
+  let status = document.getElementById("loginStatus");
+
+  if(type === "hm") {
+    if(document.getElementById("hmUser").value === "admin" &&
+       document.getElementById("hmPass").value === "admin123") {
+      status.innerText = "Head Master Login Success";
+      showSection('dashboard');
+    } else {
+      status.innerText = "Invalid HM Login";
+    }
+  }
+
+  if(type === "teacher") {
+    if(document.getElementById("tUser").value === "teacher" &&
+       document.getElementById("tPass").value === "123") {
+      status.innerText = "Teacher Login Success";
+      showSection('mark');
+    } else {
+      status.innerText = "Invalid Teacher Login";
+    }
+  }
+}
+
+// ADD STUDENT (ADMIN)
+function addStudent() {
+  let name = document.getElementById("studentName").value;
+  if(!name) return;
+
+  students.push(name);
+
+  let li = document.createElement("li");
+  li.innerText = name;
+  document.getElementById("studentList").appendChild(li);
+
+  totalStudents++;
+  updateDashboard();
+}
+
+// MARK ATTENDANCE
+function markAttendance() {
+  let user = document.getElementById("userId").value;
+
+  if(!user) return alert("Enter name");
+
+  presentCount++;
+  document.getElementById("status").innerText = "Attendance marked for " + user;
+
+  updateDashboard();
+}
+
+// UPDATE DASHBOARD (ATTENDANCE PRESENTER)
+function updateDashboard() {
+  document.getElementById("total").innerText = totalStudents;
+  document.getElementById("present").innerText = presentCount;
+  document.getElementById("absent").innerText = totalStudents - presentCount;
+}
+</script>
+
+</body>
+</html>
