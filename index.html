@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Smart Attendance System</title>
+
+<!-- GOOGLE FONT -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  background: linear-gradient(135deg, #020617, #0f172a);
+  color: white;
+}
+
+/* Layout */
+.container {
+  display: flex;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 240px;
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(12px);
+  height: 100vh;
+  padding: 20px;
+  border-right: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #22c55e;
+}
+
+.sidebar ul {
+  list-style: none;
+}
+
+.sidebar li {
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.sidebar li:hover {
+  background: rgba(34,197,94,0.2);
+  color: #22c55e;
+  transform: translateX(6px);
+}
+
+/* Main */
+.main {
+  flex: 1;
+  padding: 30px;
+}
+
+/* Sections */
+.section {
+  display: none;
+  animation: fade 0.5s ease;
+}
+
+.section.active {
+  display: block;
+}
+
+@keyframes fade {
+  from {opacity: 0; transform: translateY(10px);}
+  to {opacity: 1; transform: translateY(0);}
+}
+
+/* Cards */
+.cards {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.card {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(10px);
+  padding: 25px;
+  border-radius: 15px;
+  width: 180px;
+  text-align: center;
+  transition: 0.3s;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.card:hover {
+  transform: translateY(-5px) scale(1.05);
+  box-shadow: 0 0 15px rgba(34,197,94,0.6);
+}
+
+/* Inputs */
+input {
+  padding: 12px;
+  margin: 10px 0;
+  width: 260px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  background: #1e293b;
+  color: white;
+}
+
+/* Buttons */
+button {
+  padding: 12px 18px;
+  background: linear-gradient(45deg, #22c55e, #16a34a);
+  border: none;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 10px #22c55e;
+}
+
+/* Video */
+video {
+  border-radius: 12px;
+  margin-top: 10px;
+  border: 2px solid #22c55e;
+}
+
+/* QR */
+#qrCode {
+  margin-top: 20px;
+  background: white;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+/* Status */
+#status, #locationResult {
+  margin-top: 10px;
+  color: #22c55e;
+  font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>Smart Attendance</h2>
+    <ul>
+      <li onclick="showSection('dashboard')">Dashboard</li>
+      <li onclick="showSection('mark')">Mark Attendance</li>
+      <li onclick="showSection('qr')">QR Code</li>
+      <li onclick="showSection('face')">Face Recognition</li>
+      <li onclick="showSection('location')">Location</li>
+    </ul>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="section active">
+      <h1>Dashboard</h1>
+      <br>
+      <div class="cards">
+        <div class="card">Total Students<br><b>120</b></div>
+        <div class="card">Present Today<br><b>98</b></div>
+        <div class="card">Absent<br><b>22</b></div>
+      </div>
+    </div>
+
+    <!-- Attendance -->
+    <div id="mark" class="section">
+      <h1>Mark Attendance</h1>
+      <input type="text" id="userId" placeholder="Enter User ID">
+      <br>
+      <button onclick="markAttendance()">Mark Attendance</button>
+      <p id="status"></p>
+    </div>
+
+    <!-- QR -->
+    <div id="qr" class="section">
+      <h1>QR Code Generator</h1>
+      <input type="text" id="qrText" placeholder="Enter text">
+      <br>
+      <button onclick="generateQR()">Generate QR</button>
+      <div id="qrCode"></div>
+    </div>
+
+    <!-- Face -->
+    <div id="face" class="section">
+      <h1>Face Recognition</h1>
+      <button onclick="startCamera()">Start Camera</button>
+      <br><br>
+      <video id="video" width="320" autoplay></video>
+      <p>Camera preview (AI can be integrated)</p>
+    </div>
+
+    <!-- Location -->
+    <div id="location" class="section">
+      <h1>Location Attendance</h1>
+      <button onclick="getLocation()">Get Location</button>
+      <p id="locationResult"></p>
+    </div>
+
+  </div>
+</div>
+
+<!-- QR LIB -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<script>
+// Navigation
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(sec => {
+    sec.classList.remove('active');
+  });
+  document.getElementById(id).classList.add('active');
+}
+
+// Attendance
+function markAttendance() {
+  let userId = document.getElementById('userId').value;
+  if (!userId) {
+    alert("Enter User ID");
+    return;
+  }
+  document.getElementById('status').innerText =
+    "✅ Attendance marked for " + userId;
+}
+
+// QR
+function generateQR() {
+  let text = document.getElementById('qrText').value;
+  if (!text) {
+    alert("Enter text");
+    return;
+  }
+  document.getElementById('qrCode').innerHTML = "";
+  new QRCode(document.getElementById('qrCode'), text);
+}
+
+function startCamera() {
+  navigator.mediaDevices.getUserMedia({ video: true })
+    .then(stream => {
+      document.getElementById('video').srcObject = stream;
+    })
+    .catch(() => {
+      alert("Camera access denied");
+    });
+}
+
+function getLocation() {
+  navigator.geolocation.getCurrentPosition(pos => {
+    document.getElementById('locationResult').innerText =
+      ` Latitude: ${pos.coords.latitude}, Longitude: ${pos.coords.longitude}`;
+  }, () => {
+    alert("Location access denied");
+  });
+}
+</script>
+
+</body>
+</html>
