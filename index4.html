@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Smart Attendance System</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Background */
+body {
+  background: url("https://images.unsplash.com/photo-1523580494863-6f3031224c94") no-repeat center/cover;
+  color: white;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background: rgba(2,6,23,0.85);
+  z-index: -1;
+}
+
+.container { display: flex; }
+
+/* Sidebar */
+.sidebar {
+  width: 240px;
+  background: rgba(30,41,59,0.9);
+  height: 100vh;
+  padding: 20px;
+}
+
+.sidebar h2 {
+  text-align: center;
+  color: #22c55e;
+  margin-bottom: 20px;
+}
+
+.sidebar li {
+  padding: 10px;
+  cursor: pointer;
+}
+
+/* Main */
+.main {
+  flex: 1;
+  padding: 30px;
+}
+
+.section { display: none; }
+.section.active { display: block; }
+
+.cards {
+  display: flex;
+  gap: 20px;
+}
+
+.card {
+  background: rgba(30,41,59,0.9);
+  padding: 20px;
+  border-radius: 10px;
+  width: 150px;
+  text-align: center;
+}
+
+input {
+  padding: 10px;
+  margin: 10px;
+  width: 250px;
+  border-radius: 5px;
+  border: none;
+}
+
+button {
+  padding: 10px 15px;
+  background: #22c55e;
+  border: none;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <h2>Attendance</h2>
+  <ul>
+    <li onclick="showSection('login')">Login</li>
+    <li onclick="showSection('dashboard')">Dashboard</li>
+    <li onclick="showSection('admin')">Admin</li>
+    <li onclick="showSection('mark')">Manual</li>
+    <li onclick="showSection('qr')">QR</li>
+    <li onclick="showSection('scanner')">Scanner</li>
+  </ul>
+</div>
+
+<div class="main">
+
+<!-- LOGIN -->
+<div id="login" class="section active">
+  <h2>Login</h2>
+
+  <h4>Admin</h4>
+  <input id="hmUser" placeholder="Username">
+  <input id="hmPass" type="password" placeholder="Password">
+  <button onclick="login('hm')">Login</button>
+  <button onclick="registerAdmin()">Register</button>
+
+  <h4>Teacher</h4>
+  <input id="tUser" placeholder="Username">
+  <input id="tPass" type="password" placeholder="Password">
+  <button onclick="login('teacher')">Login</button>
+
+  <p id="loginStatus"></p>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="section">
+  <h2>Dashboard</h2>
+  <div class="cards">
+    <div class="card">Total<br><b id="total">0</b></div>
+    <div class="card">Present<br><b id="present">0</b></div>
+    <div class="card">Absent<br><b id="absent">0</b></div>
+    <div class="card">%<br><b id="percent">0%</b></div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="admin" class="section">
+  <h2>Admin Panel</h2>
+
+  <input id="studentName" placeholder="Student Name">
+  <input id="rollNumber" placeholder="Roll Number">
+  <button onclick="addStudent()">Add Student</button>
+
+  <ul id="studentList"></ul>
+</div>
+
+<!-- MANUAL -->
+<div id="mark" class="section">
+  <h2>Manual Attendance</h2>
+  <input id="userRoll" placeholder="Enter Roll Number">
+  <button onclick="markAttendance()">Mark</button>
+  <p id="status"></p>
+</div>
+
+<!-- QR -->
+<div id="qr" class="section">
+  <h2>QR Generator</h2>
+  <input id="qrRoll" placeholder="Enter Roll Number">
+  <button onclick="generateQR()">Generate</button>
+  <div id="qrBox"></div>
+</div>
+
+<!-- SCANNER -->
+<div id="scanner" class="section">
+  <h2>QR Scanner</h2>
+  <button onclick="startScanner()">Start Scanner</button>
+  <div id="reader" style="width:300px;"></div>
+  <p id="scanResult"></p>
+</div>
+
+</div>
+</div>
+
+<!-- Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<script>
+let students = {};
+let present = new Set();
+
+// Load admins from storage
+let admins = JSON.parse(localStorage.getItem("admins")) || {};
+
+// Navigation
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// Register Admin
+function registerAdmin() {
+  let user = hmUser.value;
+  let pass = hmPass.value;
+
+  if(!user || !pass) return alert("Enter details");
+
+  if(admins[user]){
+    alert("Admin already exists");
+    return;
+  }
+
+  admins[user] = pass;
+  localStorage.setItem("admins", JSON.stringify(admins));
+
+  alert("Admin Registered Successfully");
+}
+
+// Login
+function login(type) {
+
+  if(type==="hm"){
+    let user = hmUser.value;
+    let pass = hmPass.value;
+
+    if(admins[user] && admins[user] === pass){
+      loginStatus.innerText="Admin Login Success";
+      showSection('dashboard');
+    } else {
+      loginStatus.innerText="Invalid Admin Login";
+    }
+  }
+
+  else if(type==="teacher"){
+    if(tUser.value==="teacher" && tPass.value==="123"){
+      loginStatus.innerText="Teacher Login Success";
+      showSection('mark');
+    } else {
+      loginStatus.innerText="Invalid Teacher Login";
+    }
+  }
+}
+
+// Add Student
+function addStudent() {
+  let name = studentName.value;
+  let roll = rollNumber.value;
+
+  if(!name || !roll) return alert("Enter all fields");
+
+  students[roll] = name;
+
+  let li = document.createElement("li");
+  li.innerText = roll + " - " + name;
+  studentList.appendChild(li);
+
+  updateDashboard();
+}
+
+// Manual Attendance
+function markAttendance() {
+  let roll = userRoll.value;
+
+  if(!students[roll]) {
+    status.innerText = "Student not found";
+    return;
+  }
+
+  if(present.has(roll)){
+    status.innerText = "Already marked";
+    return;
+  }
+
+  present.add(roll);
+  status.innerText = "Marked: " + students[roll];
+
+  updateDashboard();
+}
+
+// QR Generator
+function generateQR() {
+  let roll = qrRoll.value;
+  if(!roll) return;
+
+  qrBox.innerHTML="";
+  new QRCode(qrBox, roll);
+}
+
+// QR Scanner
+function startScanner() {
+  const qr = new Html5Qrcode("reader");
+
+  Html5Qrcode.getCameras().then(devices=>{
+    if(devices.length){
+      qr.start(devices[0].id,{fps:10,qrbox:250},text=>{
+        if(!students[text]){
+          scanResult.innerText="Invalid QR";
+          return;
+        }
+
+        if(present.has(text)){
+          scanResult.innerText="Already Marked";
+          return;
+        }
+
+        present.add(text);
+        scanResult.innerText="Marked: "+students[text];
+
+        updateDashboard();
+      });
+    }
+  }).catch(err=>{
+    alert("Camera Error: " + err);
+  });
+}
+
+// Dashboard
+function updateDashboard() {
+  let total = Object.keys(students).length;
+  let pres = present.size;
+  let abs = total - pres;
+  let percent = total===0 ? 0 : ((pres/total)*100).toFixed(1);
+
+  document.getElementById("total").innerText = total;
+  document.getElementById("present").innerText = pres;
+  document.getElementById("absent").innerText = abs;
+  document.getElementById("percent").innerText = percent + "%";
+}
+</script>
+
+</body>
+</html>
