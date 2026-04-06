@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Smart Attendance System</title>
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  /* Background image */
+  background: url('background.jpg') no-repeat center center fixed;
+  background-size: cover;
+  color: white;
+  position: relative;
+}
+
+/* Dark overlay for readability */
+body::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(15, 23, 42, 0.8); /* dark overlay */
+  z-index: 0;
+}
+
+.container {
+  display: flex;
+  height: 100vh;
+  position: relative;
+  z-index: 1; /* place content above overlay */
+}
+
+.sidebar {
+  width: 220px;
+  background: rgba(30, 41, 59, 0.9); /* slightly transparent */
+  padding: 20px;
+  z-index: 1;
+}
+
+.sidebar button {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: none;
+  background: #334155;
+  color: white;
+  cursor: pointer;
+}
+.sidebar button:hover { background: #475569; }
+
+.main {
+  flex: 1;
+  padding: 20px;
+  z-index: 1;
+  position: relative;
+  overflow-y: auto;
+  max-height: 100vh;
+}
+
+.section {
+  background: rgba(30, 41, 59, 0.85); /* semi-transparent boxes */
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+input, button {
+  padding: 8px;
+  margin: 5px 0;
+  border-radius: 5px;
+  border: none;
+}
+input {
+  width: 100%;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+th, td {
+  border: 1px solid #334155;
+  padding: 8px;
+  text-align: center;
+  border-radius: 5px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="sidebar">
+    <button onclick="showSection('login')">Login</button>
+    <button onclick="showSection('addStudent')">Add Student</button>
+    <button onclick="showSection('attendance')">Mark Attendance</button>
+    <button onclick="showSection('dashboard')">Dashboard</button>
+    <button onclick="showSection('students')">Students List</button>
+  </div>
+  
+  <div class="main">
+    
+    <!-- LOGIN -->
+    <div id="login" class="section">
+      <h2>Login</h2>
+      <input type="text" id="username" placeholder="Username"><br>
+      <input type="password" id="password" placeholder="Password"><br>
+      <button onclick="login()">Login</button>
+      <p id="loginMsg"></p>
+    </div>
+    
+    <!-- ADD STUDENT -->
+    <div id="addStudent" class="section" style="display:none;">
+      <h2>Add Student</h2>
+      <input type="text" id="roll" placeholder="Roll Number"><br>
+      <input type="text" id="name" placeholder="Student Name"><br>
+      <button onclick="addStudent()">Add Student</button>
+      <p id="addMsg"></p>
+    </div>
+    
+    <!-- MARK ATTENDANCE -->
+    <div id="attendance" class="section" style="display:none;">
+      <h2>Mark Attendance</h2>
+      <input type="text" id="attRoll" placeholder="Roll Number"><br>
+      <button onclick="markAttendance()">Mark Attendance</button>
+      <p id="attMsg"></p>
+    </div>
+    
+    <!-- DASHBOARD -->
+    <div id="dashboard" class="section" style="display:none;">
+      <h2>Dashboard</h2>
+      <p>Total Students: <span id="total">0</span></p>
+      <p>Present Today: <span id="present">0</span></p>
+      <p>Absent Today: <span id="absent">0</span></p>
+      <p>Attendance %: <span id="percent">0</span>%</p>
+      <button onclick="loadDashboard()">Refresh</button>
+    </div>
+    
+    <!-- STUDENTS LIST -->
+    <div id="students" class="section" style="display:none;">
+      <h2>Students List</h2>
+      <table>
+        <thead>
+          <tr><th>Roll</th><th>Name</th><th>Attendance</th></tr>
+        </thead>
+        <tbody id="studentTable"></tbody>
+      </table>
+      <button onclick="loadStudents()">Refresh</button>
+    </div>
+    
+  </div>
+</div>
+
+<script>
+const API = "http://127.0.0.1:5000";
+
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.style.display='none');
+  document.getElementById(id).style.display='block';
+}
+
+// LOGIN
+function login() {
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+
+  fetch(`${API}/login`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({username, password})
+  })
+  .then(res => res.json())
+  .then(data => {
+    if(data.success){
+      document.getElementById('loginMsg').innerText = "Login successful!";
+    } else {
+      document.getElementById('loginMsg').innerText = data.message;
+    }
+  });
+}
+
+// ADD STUDENT
+function addStudent() {
+  const roll = document.getElementById('roll').value;
+  const name = document.getElementById('name').value;
+
+  fetch(`${API}/students`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({roll, name})
+  })
+  .then(res => res.json())
+  .then(data => document.getElementById('addMsg').innerText = data.message);
+}
+
+// MARK ATTENDANCE
+function markAttendance() {
+  const roll = document.getElementById('attRoll').value;
+
+  fetch(`${API}/attendance`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({roll})
+  })
+  .then(res => res.json())
+  .then(data => document.getElementById('attMsg').innerText = data.message);
+}
+
+// DASHBOARD
+function loadDashboard() {
+  fetch(`${API}/dashboard`)
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById('total').innerText = data.total;
+    document.getElementById('present').innerText = data.present;
+    document.getElementById('absent').innerText = data.absent;
+    document.getElementById('percent').innerText = data.percent;
+  });
+}
+
+// STUDENTS LIST
+function loadStudents() {
+  fetch(`${API}/students`)
+  .then(res => res.json())
+  .then(data => {
+    const tbody = document.getElementById('studentTable');
+    tbody.innerHTML = '';
+    for(const roll in data){
+      const student = data[roll];
+      const tr = `<tr><td>${roll}</td><td>${student.name}</td><td>${student.attendance.join(', ')}</td></tr>`;
+      tbody.innerHTML += tr;
+    }
+  });
+}
+</script>
+
+</body>
+</html>
